@@ -12,3 +12,8 @@ variable "subnets" {
   description = "List of subnet IDs for the ALB"
   type        = list(string)
 }
+
+variable "vpc_id" {
+  description = "VPC ID for the ALB"
+  type        = string
+}

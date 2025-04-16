@@ -22,3 +22,13 @@ variable "user_data" {
   description = "User data script for the EC2 instance"
   type        = string
 }
+
+variable "vpc_id" {
+  description = "VPC ID for the security group"
+  type        = string
+}
+
+variable "target_group_arn" {
+  description = "ARN of the target group to attach the instance"
+  type        = string
+}

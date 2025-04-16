@@ -7,11 +7,36 @@ module "vpc" {
   availability_zones    = ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
 
+resource "aws_security_group" "alb_sg" {
+  name        = "alb-sg"
+  description = "Security group for ALB"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "alb-sg"
+  }
+}
+
 module "alb" {
   source          = "./modules/alb"
   name            = "my-alb"
   security_groups = [aws_security_group.alb_sg.id]
   subnets         = module.vpc.public_subnet_ids
+  vpc_id          = module.vpc.vpc_id
 }
 
 module "ec2_a" {
@@ -20,10 +45,13 @@ module "ec2_a" {
   ami             = var.ami
   instance_type   = var.instance_type
   subnet_id       = module.vpc.public_subnet_ids[0]
+  vpc_id          = module.vpc.vpc_id
+  target_group_arn = module.alb.target_group_arn
   user_data       = <<-EOF
                     #!/bin/bash
+                    apt-get update
+                    apt-get install -y nginx
                     echo "Hello from Instance A" > /var/www/html/index.html
-                    yum install -y nginx
                     systemctl start nginx
                     EOF
 }
@@ -34,10 +62,14 @@ module "ec2_b" {
   ami             = var.ami
   instance_type   = var.instance_type
   subnet_id       = module.vpc.public_subnet_ids[1]
+  vpc_id          = module.vpc.vpc_id
+  target_group_arn = module.alb.target_group_arn
   user_data       = <<-EOF
                     #!/bin/bash
+                    apt-get update
+                    apt-get install -y nginx
+                    mkdir -p /var/www/html/images
                     echo "Hello from Instance B" > /var/www/html/images/index.html
-                    yum install -y nginx
                     systemctl start nginx
                     EOF
 }
@@ -48,10 +80,14 @@ module "ec2_c" {
   ami             = var.ami
   instance_type   = var.instance_type
   subnet_id       = module.vpc.public_subnet_ids[2]
+  vpc_id          = module.vpc.vpc_id
+  target_group_arn = module.alb.target_group_arn
   user_data       = <<-EOF
                     #!/bin/bash
+                    apt-get update
+                    apt-get install -y nginx
+                    mkdir -p /var/www/html/register
                     echo "Hello from Instance C" > /var/www/html/register/index.html
-                    yum install -y nginx
                     systemctl start nginx
                     EOF
 }
